@@ -1,0 +1,54 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "concierge",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-03-10",
+	"compatibility_flags": ["nodejs_compat"],
+	"limits": {
+		"cpu_ms": 50
+	},
+	"migrations": [
+		{
+			"new_sqlite_classes": ["ConciergeMCP"],
+			"tag": "v1"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "ConciergeMCP",
+				"name": "MCP_OBJECT"
+			}
+		]
+	},
+	"observability": {
+		"enabled": true
+	},
+	"kv_namespaces": [
+		{
+			"binding": "CONCIERGE_KV",
+			// Replace before deployment.
+			"id": "00000000000000000000000000000000"
+		}
+	],
+	"env": {
+		"dev": {
+			"name": "concierge-dev",
+			"durable_objects": {
+				"bindings": [
+					{
+						"class_name": "ConciergeMCP",
+						"name": "MCP_OBJECT"
+					}
+				]
+			},
+			"kv_namespaces": [
+				{
+					"binding": "CONCIERGE_KV",
+					// Replace with a development KV namespace id when using remote dev.
+					"id": "11111111111111111111111111111111"
+				}
+			]
+		}
+	}
+}
