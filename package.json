@@ -1,35 +1,31 @@
 {
 	"name": "concierge",
-	"version": "0.1.0",
-	"description": "Standalone MCP server for coordinating calendar, tasks, fitness signals, and summaries.",
+	"version": "0.2.0",
+	"description": "Personal assistant built on the Claude Agent SDK that coordinates calendar, tasks, and fitness over MCP.",
 	"type": "module",
+	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --env dev --port 8788",
+		"start": "tsx src/cli.ts",
+		"dev": "tsx src/cli.ts",
+		"connect": "tsx src/connect.ts",
 		"format": "biome format --write",
 		"lint": "biome lint",
 		"lint:fix": "biome lint --fix",
-		"start": "wrangler dev --env dev --port 8788",
 		"type-check": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest --watch"
 	},
 	"dependencies": {
+		"@anthropic-ai/claude-agent-sdk": "^0.3.179",
 		"@modelcontextprotocol/sdk": "^1.29.0",
-		"agents": "^0.10.2",
-		"hono": "^4.12.25",
+		"dotenv": "^16.4.5",
 		"zod": "^4.1.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.5",
-		"@cloudflare/workers-types": "^4.20260616.1",
 		"@types/node": "^24.7.2",
+		"tsx": "^4.19.2",
 		"typescript": "5.9.3",
-		"vitest": "^4.1.9",
-		"wrangler": "^4.100.0"
-	},
-	"overrides": {
-		"esbuild": "^0.28.1",
-		"ws": "^8.21.0"
+		"vitest": "^4.1.9"
 	}
 }

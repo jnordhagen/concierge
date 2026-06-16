@@ -1,4 +1,4 @@
-import { UpstreamApiError } from "./errors.js";
+import { UpstreamApiError } from "../lib/errors.js";
 
 export interface GoogleCalendarEvent {
 	id: string;

@@ -1,10 +1,5 @@
-import type { Env } from "../types.js";
-import {
-	getConnectedAccount,
-	putConnectedAccount,
-} from "./storage.js";
-
-export const GOOGLE_PROVIDER = "google";
+import type { Config } from "../config.js";
+import type { FileStore } from "../lib/store.js";
 
 export const GOOGLE_SCOPES = [
 	"https://www.googleapis.com/auth/calendar.freebusy",
@@ -57,10 +52,8 @@ export async function exchangeGoogleCode(options: {
 	clientSecret: string;
 	redirectUri: string;
 	code: string;
-	fetcher?: typeof fetch;
 }): Promise<GoogleTokenSet> {
-	const fetcher = options.fetcher ?? fetch;
-	const response = await fetcher("https://oauth2.googleapis.com/token", {
+	const response = await fetch("https://oauth2.googleapis.com/token", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: new URLSearchParams({
@@ -90,10 +83,8 @@ export async function refreshGoogleAccessToken(options: {
 	clientId: string;
 	clientSecret: string;
 	refreshToken: string;
-	fetcher?: typeof fetch;
 }): Promise<GoogleTokenSet> {
-	const fetcher = options.fetcher ?? fetch;
-	const response = await fetcher("https://oauth2.googleapis.com/token", {
+	const response = await fetch("https://oauth2.googleapis.com/token", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: new URLSearchParams({
@@ -118,56 +109,30 @@ export async function refreshGoogleAccessToken(options: {
 	};
 }
 
-export async function storeGoogleTokens(
-	env: Env,
-	userId: string,
-	tokens: GoogleTokenSet,
-): Promise<void> {
-	await putConnectedAccount(
-		env.CONCIERGE_KV,
-		env.COOKIE_ENCRYPTION_KEY,
-		userId,
-		GOOGLE_PROVIDER,
-		tokens,
-	);
-}
-
-export async function getGoogleTokens(
-	env: Env,
-	userId: string,
-): Promise<GoogleTokenSet | null> {
-	const tokens = await getConnectedAccount<GoogleTokenSet>(
-		env.CONCIERGE_KV,
-		env.COOKIE_ENCRYPTION_KEY,
-		userId,
-		GOOGLE_PROVIDER,
-	);
-
+/**
+ * Return a valid Google access token, refreshing and persisting it when it is
+ * within 60s of expiry. Throws if Google has not been connected yet.
+ */
+export async function getAccessToken(store: FileStore, config: Config): Promise<string> {
+	const tokens = await store.getGoogleTokens();
 	if (!tokens) {
-		return null;
+		throw new Error('Google is not connected. Run "npm run connect google" first.');
 	}
 
 	const refreshWindowMs = 60 * 1000;
 	if (tokens.expires_at > Date.now() + refreshWindowMs) {
-		return tokens;
+		return tokens.access_token;
 	}
 
 	if (!tokens.refresh_token) {
-		return null;
+		throw new Error('Google session expired and no refresh token is stored. Re-run "npm run connect google".');
 	}
 
 	const refreshed = await refreshGoogleAccessToken({
-		clientId: env.GOOGLE_CLIENT_ID,
-		clientSecret: env.GOOGLE_CLIENT_SECRET,
+		clientId: config.googleClientId,
+		clientSecret: config.googleClientSecret,
 		refreshToken: tokens.refresh_token,
 	});
-	await storeGoogleTokens(env, userId, refreshed);
-	return refreshed;
-}
-
-export function hasScope(tokens: GoogleTokenSet | null, scope: string): boolean {
-	if (!tokens?.scope) {
-		return false;
-	}
-	return tokens.scope.split(/\s+/).includes(scope);
+	await store.setGoogleTokens(refreshed);
+	return refreshed.access_token;
 }
